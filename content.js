@@ -2,10 +2,26 @@
     'use strict';
   
     /** ----------------------------------
+     *  ⚙️ 設定セクション（ここを変更すれば調整OK）
+     * ---------------------------------- */
+  
+    // トップページで残す動画の数
+    const MAX_TOP_VIDEOS = 1;
+  
+    // 検索結果ページで残す動画の数
+    const MAX_SEARCH_RESULTS = 10;
+  
+    // 画面を白黒化するかどうか
+    const ENABLE_MONOCHROME = true;
+  
+    // デバッグメッセージを出すか
+    const DEBUG = true;
+  
+    /** ----------------------------------
      *  ✅ 実行条件: YouTube ドメインのみ
      * ---------------------------------- */
     if (!location.hostname.includes('youtube.com')) {
-      console.log('[AnnoyMyselfYouTube] このサイトでは実行されません');
+      if (DEBUG) console.log('[AnnoyMyselfYouTube] このサイトでは実行されません');
       return;
     }
   
@@ -16,14 +32,14 @@
       const el = document.querySelector('ytd-watch-next-secondary-results-renderer');
       if (el) {
         el.remove();
-        console.log('[AnnoyMyselfYouTube] 関連動画を削除しました');
+        if (DEBUG) console.log('[AnnoyMyselfYouTube] 関連動画を削除しました');
       }
     }
   
     /** ----------------------------------
      *  2️⃣ トップページの動画を n 件だけ残す
      * ---------------------------------- */
-    function limitTopVideos(n = 1) {
+    function limitTopVideos(n = MAX_TOP_VIDEOS) {
       const result = document.evaluate(
         '/html/body/ytd-app/div[1]/ytd-page-manager/ytd-browse/ytd-two-column-browse-results-renderer/div[1]/ytd-rich-grid-renderer/div[6]',
         document,
@@ -39,15 +55,42 @@
           for (let i = n; i < children.length; i++) {
             children[i].remove();
           }
-          console.log(`[AnnoyMyselfYouTube] トップページの動画を${n}件だけ残しました`);
+          if (DEBUG) console.log(`[AnnoyMyselfYouTube] トップページの動画を${n}件だけ残しました`);
         }
       }
     }
   
     /** ----------------------------------
-     *  3️⃣ 画面を白黒化
+     *  3️⃣ 検索結果の動画を n 件だけ残す
+     * ---------------------------------- */
+    function limitSearchResults(n = MAX_SEARCH_RESULTS) {
+      if (location.pathname !== '/results') return;
+  
+      let container = document.querySelector('ytd-two-column-search-results-renderer #contents');
+      if (!container) {
+        const candidates = Array.from(document.querySelectorAll('#contents'));
+        container = candidates.find(node =>
+          node.querySelector('ytd-video-renderer, ytd-channel-renderer, ytd-playlist-renderer')
+        );
+      }
+  
+      if (!container) return;
+  
+      const children = Array.from(container.children).filter(el => el && el.nodeType === Node.ELEMENT_NODE);
+      if (children.length > n) {
+        for (let i = n; i < children.length; i++) {
+          if (children[i].tagName === 'YTD-CONTINUATION-ITEM-RENDERER') continue; // 続きを読み込む要素は残す
+          children[i].remove();
+        }
+        if (DEBUG) console.log(`[AnnoyMyselfYouTube] 検索結果を${n}件だけ残しました`);
+      }
+    }
+  
+    /** ----------------------------------
+     *  4️⃣ 画面を白黒化
      * ---------------------------------- */
     function makePageMonochrome() {
+      if (!ENABLE_MONOCHROME) return;
       const style = document.createElement('style');
       style.textContent = `
         html {
@@ -56,17 +99,17 @@
         }
       `;
       document.head.appendChild(style);
-      console.log('[AnnoyMyselfYouTube] 画面を白黒にしました');
+      if (DEBUG) console.log('[AnnoyMyselfYouTube] 画面を白黒にしました');
     }
   
     /** ----------------------------------
-     *  4️⃣ エンドスクリーンを削除
+     *  5️⃣ エンドスクリーンを削除
      * ---------------------------------- */
     function removeEndscreen() {
       const nodes = document.querySelectorAll('.ytp-endscreen-content');
       if (nodes.length) {
         nodes.forEach(n => n.remove());
-        console.log(`[AnnoyMyselfYouTube] エンドスクリーンを削除しました x${nodes.length}`);
+        if (DEBUG) console.log(`[AnnoyMyselfYouTube] エンドスクリーンを削除しました x${nodes.length}`);
       }
     }
   
@@ -76,11 +119,12 @@
     document.head.appendChild(styleEndscreen);
   
     /** ----------------------------------
-     *  5️⃣ DOM変化・イベント監視（SPA対応）
+     *  6️⃣ DOM変化・イベント監視（SPA対応）
      * ---------------------------------- */
     const observer = new MutationObserver(() => {
       removeRelated();
-      limitTopVideos(1);
+      limitTopVideos(MAX_TOP_VIDEOS);
+      limitSearchResults(MAX_SEARCH_RESULTS);
       removeEndscreen();
     });
   
@@ -88,18 +132,20 @@
   
     window.addEventListener('yt-navigate-finish', () => {
       removeRelated();
-      limitTopVideos(1);
+      limitTopVideos(MAX_TOP_VIDEOS);
+      limitSearchResults(MAX_SEARCH_RESULTS);
       removeEndscreen();
     }, true);
   
     document.addEventListener('ended', removeEndscreen, true);
   
     /** ----------------------------------
-     *  6️⃣ 初回実行
+     *  7️⃣ 初回実行
      * ---------------------------------- */
     makePageMonochrome();
     removeRelated();
-    limitTopVideos(1);
+    limitTopVideos(MAX_TOP_VIDEOS);
+    limitSearchResults(MAX_SEARCH_RESULTS);
     removeEndscreen();
   
   })();
