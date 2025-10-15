@@ -9,7 +9,7 @@
     const MAX_TOP_VIDEOS = 1;
   
     // 検索結果ページで残す動画の数
-    const MAX_SEARCH_RESULTS = 10;
+    const MAX_SEARCH_RESULTS = 3;
   
     // 画面を白黒化するかどうか
     const ENABLE_MONOCHROME = true;
@@ -64,27 +64,46 @@
      *  3️⃣ 検索結果の動画を n 件だけ残す
      * ---------------------------------- */
     function limitSearchResults(n = MAX_SEARCH_RESULTS) {
-      if (location.pathname !== '/results') return;
-  
-      let container = document.querySelector('ytd-two-column-search-results-renderer #contents');
-      if (!container) {
+        if (location.pathname !== '/results') return;
+    
+        // ✅ 検索結果のコンテナを特定
+        let container = document.querySelector('ytd-item-section-renderer #contents');
+    
+        // フォールバック（念のため複数候補から絞り込み）
+        if (!container) {
         const candidates = Array.from(document.querySelectorAll('#contents'));
         container = candidates.find(node =>
-          node.querySelector('ytd-video-renderer, ytd-channel-renderer, ytd-playlist-renderer')
+            node.closest('ytd-item-section-renderer') &&
+            node.querySelector('ytd-video-renderer, ytd-channel-renderer, ytd-playlist-renderer')
         );
-      }
-  
-      if (!container) return;
-  
-      const children = Array.from(container.children).filter(el => el && el.nodeType === Node.ELEMENT_NODE);
-      if (children.length > n) {
+        }
+    
+        if (!container) return;
+    
+        // 直下の子要素を列挙
+        const children = Array.from(container.children).filter(
+        el => el && el.nodeType === Node.ELEMENT_NODE
+        );
+    
+        // 指定数を超えたら削除
+        if (children.length > n) {
         for (let i = n; i < children.length; i++) {
-          if (children[i].tagName === 'YTD-CONTINUATION-ITEM-RENDERER') continue; // 続きを読み込む要素は残す
-          children[i].remove();
+            // 続き読み込みボタンは残す
+            if (children[i].tagName === 'YTD-CONTINUATION-ITEM-RENDERER') continue;
+            children[i].remove();
         }
         if (DEBUG) console.log(`[AnnoyMyselfYouTube] 検索結果を${n}件だけ残しました`);
-      }
+        }
+
+        function disableInfiniteScroll() {
+            const triggers = document.querySelectorAll('ytd-continuation-item-renderer');
+            triggers.forEach(t => t.remove());
+            if (DEBUG) console.log('[AnnoyMyselfYouTube] 無限スクロールを停止しました');
+          }
+
+        disableInfiniteScroll();
     }
+  
   
     /** ----------------------------------
      *  4️⃣ 画面を白黒化
