@@ -2,7 +2,7 @@
     'use strict';
   
     /** ----------------------------------
-     *  安全確認：ホストが YouTube の場合のみ実行
+     *  ✅ 実行条件: YouTube ドメインのみ
      * ---------------------------------- */
     if (!location.hostname.includes('youtube.com')) {
       console.log('[AnnoyMyselfYouTube] このサイトでは実行されません');
@@ -10,7 +10,7 @@
     }
   
     /** ----------------------------------
-     *  1️⃣ 関連動画（右サイドバー）を削除
+     *  1️⃣ 関連動画（右サイドバー）削除
      * ---------------------------------- */
     function removeRelated() {
       const el = document.querySelector('ytd-watch-next-secondary-results-renderer');
@@ -21,7 +21,7 @@
     }
   
     /** ----------------------------------
-     *  2️⃣ トップページで最初の n 件だけ残す
+     *  2️⃣ トップページの動画を n 件だけ残す
      * ---------------------------------- */
     function limitTopVideos(n = 1) {
       const result = document.evaluate(
@@ -45,7 +45,7 @@
     }
   
     /** ----------------------------------
-     *  3️⃣ 画面を白黒にする
+     *  3️⃣ 画面を白黒化
      * ---------------------------------- */
     function makePageMonochrome() {
       const style = document.createElement('style');
@@ -60,25 +60,47 @@
     }
   
     /** ----------------------------------
-     *  4️⃣ ページ変化に対応（SPA対応）
+     *  4️⃣ エンドスクリーンを削除
+     * ---------------------------------- */
+    function removeEndscreen() {
+      const nodes = document.querySelectorAll('.ytp-endscreen-content');
+      if (nodes.length) {
+        nodes.forEach(n => n.remove());
+        console.log(`[AnnoyMyselfYouTube] エンドスクリーンを削除しました x${nodes.length}`);
+      }
+    }
+  
+    // CSSで強制的に非表示
+    const styleEndscreen = document.createElement('style');
+    styleEndscreen.textContent = `.ytp-endscreen-content { display: none !important; }`;
+    document.head.appendChild(styleEndscreen);
+  
+    /** ----------------------------------
+     *  5️⃣ DOM変化・イベント監視（SPA対応）
      * ---------------------------------- */
     const observer = new MutationObserver(() => {
       removeRelated();
-      limitTopVideos(3);  // ← 残したい動画数をここで変更可能
+      limitTopVideos(1);
+      removeEndscreen();
     });
   
     observer.observe(document.documentElement, { childList: true, subtree: true });
   
     window.addEventListener('yt-navigate-finish', () => {
       removeRelated();
-      limitTopVideos(3);
+      limitTopVideos(1);
+      removeEndscreen();
     }, true);
   
+    document.addEventListener('ended', removeEndscreen, true);
+  
     /** ----------------------------------
-     *  5️⃣ 初回実行
+     *  6️⃣ 初回実行
      * ---------------------------------- */
     makePageMonochrome();
     removeRelated();
     limitTopVideos(1);
+    removeEndscreen();
+  
   })();
   
