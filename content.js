@@ -79,6 +79,6 @@
      * ---------------------------------- */
     makePageMonochrome();
     removeRelated();
-    limitTopVideos(3);
+    limitTopVideos(1);
   })();
   
