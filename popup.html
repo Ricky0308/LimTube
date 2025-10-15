@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AnnoyMyselfYouTube Settings</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      width: 240px;
+      padding: 10px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input[type="number"] {
+      width: 60px;
+    }
+  </style>
+</head>
+<body>
+  <h3>Settings</h3>
+
+  <label>
+    Top Page Videos:
+    <input type="number" id="topVideos" min="0" max="50" />
+  </label>
+
+  <label>
+    Search Results:
+    <input type="number" id="searchResults" min="0" max="50" />
+  </label>
+
+  <label>
+    <input type="checkbox" id="monochrome" />
+    Enable Monochrome Mode
+  </label>
+
+  <button id="save">Save</button>
+  <p id="status"></p>
+
+  <script src="popup.js"></script>
+</body>
+</html>
